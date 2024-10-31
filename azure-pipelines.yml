@@ -104,6 +104,29 @@ extends:
             inlineScript: |
               dotnet build build.proj /t:Clone /v:n /bl:$(Build.ArtifactStagingDirectory)/logs/clone.binlog /p:Stage1StorageAccount=netsourceindexstage1 /p:Stage1StorageContainer=stage1
 
+        - task: AzureCLI@2
+          displayName: Create new storage container
+          inputs:
+            #azureSubscription: SourceDotNet-Deployment-ARM
+            azureSubscription: "NetSourceIndex Prod"
+            scriptLocation: inlineScript
+            scriptType: ps
+            inlineScript: >
+              deployment/upload-index-to-container.ps1
+              -StorageAccountName $(storageAccount)
+              -OutFile index.url
+
+        - task: AzureFileCopy@6
+          displayName: Upload index to Azure Stroage
+          inputs:
+            #azureSubscription: SourceDotNet-Deployment-ARM
+            azureSubscription: "NetSourceIndex Prod"
+            SourcePath: "src/SourceBrowser/*"
+            #SourcePath: "bin/index/index/*"
+            Destination: AzureBlob
+            storage: $(storageAccount)
+            ContainerName: $(NEW_CONTAINER_NAME)
+
         - task: DotNetCoreCLI@2
           displayName: Prepare All Repositories
           inputs:
